@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import { getAll, createPerson, updatePerson, deletePerson } from './services/phonebook'
 
 
 const Filter = ({ query, handleSearch }) => {
@@ -33,13 +33,20 @@ const PersonForm = (props) => {
   )
 }
 
-const Person = ({ person }) => <div>{person.name} {person.number}</div>
+const Person = ({ person, handleDelete }) => {
+  return (
+    <div>
+      <span>{person.name} {person.number} </span>
+      <button onClick={() => handleDelete(person.id)}>delete</button>
+    </div>
+  )
+}
 
-const Persons = ({ personsToShow }) => {
+const Persons = ({ personsToShow, handleDelete }) => {
   return (
     <div>
       {personsToShow.map(person =>
-        <Person key={person.id} person={person} />
+        <Person key={person.id} person={person} handleDelete={handleDelete} />
       )}
     </div>
   )
@@ -68,14 +75,29 @@ const App = () => {
 
     const isNameAdded = persons.find(person => person.name === newName)
     if (isNameAdded) {
-      alert(`${newName} is already added to phonebook`)
+      if (window.confirm(`${newName} is already added to phonebook, replace the old number with a new one?`)) {
+        const person = persons.find(person => person.name === newName)
+        const changedPerson = { ...person, number: newPhone }
+        updatePerson(person.id, changedPerson)
+          .then(data => setPersons(persons.map(person => person.id !== data.id ? person : data)))
+      }
       return
     }
 
-    const newPerson = { name: newName, number: newPhone, id: persons.length + 1 }
-    setPersons(persons.concat(newPerson))
+    const newPerson = { name: newName, number: newPhone }
+    createPerson(newPerson)
+      .then(data => setPersons(persons.concat(data)))
+
     setNewName('')
     setNewPhone('')
+  }
+
+  const handleDelete = (id) => {
+    const person = persons.find(person => person.id === id)
+    if (window.confirm(`Delete ${person.name}?`)) {
+      deletePerson(id)
+        .then(() => setPersons(persons.filter(person => person.id !== id)))
+    }
   }
 
   const personsToShow = persons.filter(person => {
@@ -83,13 +105,9 @@ const App = () => {
   })
 
   useEffect(() => {
-    axios.get('http://localhost:3001/persons')
-      .then(response => {
-        setPersons(response.data)
-      })
-      .catch(error => {
-        console.log(error)
-      })
+    getAll()
+      .then(data => setPersons(data))
+      .catch(error => console.log(error))
   }, [])
 
   return (
@@ -115,6 +133,7 @@ const App = () => {
 
       <Persons
         personsToShow={personsToShow}
+        handleDelete={handleDelete}
       />
     </div>
   )
