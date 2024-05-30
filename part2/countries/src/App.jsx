@@ -10,6 +10,36 @@ const Filter = ({ search, handleSearch }) => {
   )
 }
 
+const Weather = ({ capital }) => {
+  const [weather, setWeather] = useState({})
+
+  useEffect(() => {
+    axios
+      .get(`https://api.openweathermap.org/data/2.5/weather?q=${capital}&appid=${import.meta.env.VITE_OPENWEATHER_API_KEY}`)
+      .then(response => {
+        setWeather(response.data)
+      })
+      .catch(error => console.log(error))
+  }, [capital])
+
+  if (Object.keys(weather).length === 0) {
+    return (
+      <div>
+        loading...
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <h2>Weather in {capital}</h2>
+      <p><b>temperature:</b> {(weather.main.temp - 273.15).toFixed(2)} Celsius</p>
+      <img src={`http://openweathermap.org/img/wn/${weather.weather[0].icon}@2x.png`} alt="weather icon" />
+      <p><b>wind:</b> {weather.wind.speed} m/s</p>
+    </div>
+  )
+}
+
 const Country = ({ country }) => {
   return (
     <div>
@@ -26,6 +56,9 @@ const Country = ({ country }) => {
       </ul>
       <br />
       <img src={country.flags.png} height="100" alt={`flag of ${country.name.common}`} />
+
+      <Weather capital={country.capital} />
+
     </div>
   )
 }
