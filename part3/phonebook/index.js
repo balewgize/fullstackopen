@@ -6,6 +6,7 @@ const app = express()
 
 app.use(cors())
 app.use(express.json()) // to parse JSON bodies
+app.use(express.static('frontend/dist'))
 
 morgan.token("body", (request, response) => {
     return JSON.stringify(request.body)
